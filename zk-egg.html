@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The ZK Egg</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      color: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      overflow-x: hidden;
+    }
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      text-align: center;
+      margin: 0;
+    }
+    h1 .highlight {
+      color: #FF00B8;
+    }
+    #description {
+      font-size: 18px;
+      margin: 10px 0 30px;
+      text-align: center;
+    }
+    #egg-section {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #egg-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #egg {
+      width: 200px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease;
+    }
+    #egg:active {
+      transform: scale(0.98);
+    }
+    #health-bar {
+      width: 200px;
+      height: 16px;
+      background-color: #eee;
+      border-radius: 8px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    #health-fill {
+      height: 100%;
+      background-color: #FF00B8;
+      width: 100%;
+      transition: width 0.2s ease;
+    }
+    #info {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #store {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #store button {
+      background-color: #0a0a0a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .damage-float {
+      position: absolute;
+      color: #FF00B8;
+      font-weight: bold;
+      pointer-events: none;
+      animation: floatUp 0.7s ease forwards;
+    }
+    @keyframes floatUp {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-40px); }
+    }
+    #message {
+      max-width: 300px;
+      font-size: 30px;
+      text-align: left;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #message.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1><span class="highlight">ZK</span> Egg.</h1>
+  <p id="description">Click to break the egg.<br>Or... don’t.</p>
+
+  <div id="egg-section">
+    <div id="egg-container">
+      <img id="egg" src="egg.png" alt="The ZK Egg" />
+      <div id="health-bar"><div id="health-fill"></div></div>
+      <audio id="click-sound" src="click.mp3" preload="auto"></audio>
+      <audio id="break-sound" src="break.mp3" preload="auto"></audio>
+    </div>
+    <div id="message"></div>
+  </div>
+
+  <div id="info">
+    <div><strong>Your Points:</strong> <span id="points">0</span></div>
+    <div><strong>Damage per Click:</strong> <span id="dpc">1</span></div>
+  </div>
+
+  <div id="store">
+	<button onclick="buyUpgrade(1, 100)">+1 Egg Damage (100 pts)</button>
+	<button onclick="buyUpgrade(3, 250)">+5 Egg Damage (250 pts)</button>
+	<button onclick="buyUpgrade(69, 500)">Secret Upgrade (500 pts)</button>
+  </div>
+
+  <script>
+    let eggHealth = 1000;
+    const maxHealth = 1000;
+    let points = 0;
+    let dpc = 1;
+
+    const egg = document.getElementById("egg");
+    const healthFill = document.getElementById("health-fill");
+    const pointsEl = document.getElementById("points");
+    const dpcEl = document.getElementById("dpc");
+    const messageEl = document.getElementById("message");
+    const clickSound = document.getElementById("click-sound");
+    const breakSound = document.getElementById("break-sound");
+
+    egg.addEventListener("click", (e) => {
+      if (eggHealth <= 0) return;
+
+      clickSound.currentTime = 0;
+      clickSound.play();
+
+      eggHealth -= dpc;
+      points += dpc;
+
+      const dmg = document.createElement("span");
+      dmg.className = "damage-float";
+      dmg.textContent = `-${dpc}`;
+      dmg.style.left = `${e.pageX - 10}px`;
+      dmg.style.top = `${e.pageY - 20}px`;
+      document.body.appendChild(dmg);
+      setTimeout(() => dmg.remove(), 700);
+
+      const healthPercent = Math.max(0, (eggHealth / maxHealth) * 100);
+      healthFill.style.width = `${healthPercent}%`;
+
+      if (eggHealth <= 0) {
+        egg.src = "cracked_egg_tge.png";
+        breakSound.play();
+        showZKMessage();
+      }
+
+      pointsEl.innerText = points;
+      dpcEl.innerText = dpc;
+    });
+
+    function buyUpgrade(amount, cost) {
+      if (points >= cost) {
+        points -= cost;
+        dpc += amount;
+        pointsEl.innerText = points;
+        dpcEl.innerText = dpc;
+      }
+    }
+
+    function showZKMessage() {
+      messageEl.classList.add("visible");
+      messageEl.innerHTML = `
+       <p><strong>With ZK, you don't need to break the egg to know what's inside is good.</strong></p>
+        <p>But you did it anyway lol</p>
+      `;
+    }
+  </script>
+</body>
+</html>
