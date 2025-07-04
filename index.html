@@ -73,6 +73,14 @@
       text-align: center;
       margin: 20px 0;
     }
+    #timer {
+      font-size: 18px;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      width: 110px;
+      margin: 10px auto 0;
+      visibility: hidden;
+    }
     #store {
       display: flex;
       gap: 10px;
@@ -88,6 +96,17 @@
       font-size: 16px;
       border-radius: 4px;
       cursor: pointer;
+    }
+    #shareBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0a0a0a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none;
     }
     .damage-float {
       position: absolute;
@@ -129,12 +148,14 @@
   <div id="info">
     <div><strong>Your Points:</strong> <span id="points">0</span></div>
     <div><strong>Damage per Click:</strong> <span id="dpc">1</span></div>
+    <div id="timer">Time: 00:00:00</div>
+    <button id="shareBtn">Share on X</button>
   </div>
 
   <div id="store">
-	<button onclick="buyUpgrade(1, 100)">+1 Egg Damage (100 pts)</button>
-	<button onclick="buyUpgrade(5, 250)">+5 Egg Damage (250 pts)</button>
-	<button onclick="buyUpgrade(69, 500)">+69 Egg Damage (500 pts)</button>
+    <button onclick="buyUpgrade(1, 100)">+1 Egg Damage (100 pts)</button>
+    <button onclick="buyUpgrade(5, 250)">+5 Egg Damage (250 pts)</button>
+    <button onclick="buyUpgrade(69, 500)">+69 Egg Damage (500 pts)</button>
   </div>
 
   <script>
@@ -142,6 +163,9 @@
     const maxHealth = 1000;
     let points = 0;
     let dpc = 1;
+    let timerStarted = false;
+    let startTime;
+    let timerInterval;
 
     const egg = document.getElementById("egg");
     const healthFill = document.getElementById("health-fill");
@@ -150,9 +174,18 @@
     const messageEl = document.getElementById("message");
     const clickSound = document.getElementById("click-sound");
     const breakSound = document.getElementById("break-sound");
+    const timerEl = document.getElementById("timer");
+    const shareBtn = document.getElementById("shareBtn");
 
     egg.addEventListener("click", (e) => {
       if (eggHealth <= 0) return;
+
+      if (!timerStarted) {
+        timerStarted = true;
+        startTime = performance.now();
+        timerEl.style.visibility = "visible";
+        timerInterval = setInterval(updateTimer, 10);
+      }
 
       clickSound.currentTime = 0;
       clickSound.play();
@@ -174,11 +207,21 @@
       if (eggHealth <= 0) {
         egg.src = "cracked_egg_tge.png";
         breakSound.play();
+        clearInterval(timerInterval);
+        shareBtn.style.display = "inline-block"; // Mostrar botão só agora
         showZKMessage();
       }
 
       pointsEl.innerText = points;
       dpcEl.innerText = dpc;
+    });
+
+    shareBtn.addEventListener("click", () => {
+      if (!timerStarted) return;
+      const timeText = timerEl.innerText.replace("Time: ", "");
+      const tweetText = encodeURIComponent(`I just broke the ZK Egg in ${timeText}! @SuccinctLabs #ZKEgg #Speedrun`);
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+      window.open(twitterUrl, "_blank", "width=550,height=420");
     });
 
     function buyUpgrade(amount, cost) {
@@ -193,9 +236,20 @@
     function showZKMessage() {
       messageEl.classList.add("visible");
       messageEl.innerHTML = `
-       <p><strong>With ZKPs, you don't need to break the egg to know it's good.</strong></p>
+        <p><strong>With ZKPs, you don't need to break the egg to know it's good.</strong></p>
         <p>But you did it anyway lol</p>
       `;
+    }
+
+    function updateTimer() {
+      const now = performance.now();
+      const diff = now - startTime;
+      const totalCentiseconds = Math.floor(diff / 10);
+      const minutes = Math.floor(totalCentiseconds / 6000);
+      const seconds = Math.floor((totalCentiseconds % 6000) / 100);
+      const centiseconds = totalCentiseconds % 100;
+      const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(centiseconds).padStart(2, '0')}`;
+      timerEl.innerText = `Time: ${formatted}`;
     }
   </script>
 </body>
